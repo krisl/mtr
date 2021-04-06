@@ -84,13 +84,8 @@ static struct nethost host[MaxHost];
 static struct sequence sequence[MaxSequence];
 static struct packet_command_pipe_t packet_command_pipe;
 
-static struct sockaddr_storage sourcesockaddr_struct;
-static struct sockaddr_storage remotesockaddr_struct;
-
-static struct sockaddr *sourcesockaddr =
-    (struct sockaddr *) &sourcesockaddr_struct;
-static struct sockaddr *remotesockaddr =
-    (struct sockaddr *) &remotesockaddr_struct;
+static struct sockaddr_storage sourcesockaddr;
+static struct sockaddr_storage remotesockaddr;
 
 static ip_t *sourceaddress;
 static ip_t *remoteaddress;
@@ -229,7 +224,7 @@ static void net_process_ping(
 #endif
     struct nethost *nh = NULL;
 
-    memcpy(&addrcopy, addr, sockaddr_addr_size(sourcesockaddr));
+    memcpy(&addrcopy, addr, sockaddr_addr_size(&sourcesockaddr));
 
     index = mark_sequence_complete(seq);
     if (index < 0) {
@@ -252,7 +247,7 @@ static void net_process_ping(
         }
 
         if (found == 0 && i < MAX_PATH) {
-            memcpy(&nh->addrs[i], &addrcopy, sockaddr_addr_size(sourcesockaddr));
+            memcpy(&nh->addrs[i], &addrcopy, sockaddr_addr_size(&sourcesockaddr));
 
             nh->mplss[i] = *mpls;
             display_rawhost(ctl, index, &nh->addrs[i], mpls);
@@ -261,7 +256,7 @@ static void net_process_ping(
         /* Always save the latest host in nh->addr. This
          * allows maxTTL to change whenever path changes.
          */
-        memcpy(&nh->addr, addrcopy, sockaddr_addr_size(sourcesockaddr));
+        memcpy(&nh->addr, addrcopy, sockaddr_addr_size(&sourcesockaddr));
         nh->mpls = *mpls;
         display_rawhost(ctl, index, &nh->addr, mpls);
     }
@@ -695,7 +690,7 @@ static void net_find_local_address(
     struct sockaddr_storage remote_sockaddr;
 
     udp_socket =
-        socket(remotesockaddr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+        socket(remotesockaddr.ss_family, SOCK_DGRAM, IPPROTO_UDP);
     if (udp_socket == -1) {
         error(EXIT_FAILURE, errno, "udp socket creation failed");
     }
@@ -704,8 +699,8 @@ static void net_find_local_address(
        We need to set the port to a non-zero value for the connect
        to succeed.
      */
-    addr_length = sockaddr_size(&remotesockaddr_struct);
-    memcpy(&remote_sockaddr, &remotesockaddr_struct, addr_length);
+    addr_length = sockaddr_size(&remotesockaddr);
+    memcpy(&remote_sockaddr, &remotesockaddr, addr_length);
     *sockaddr_port_offset(&remote_sockaddr) = htons(1);
 
     if (connect
@@ -723,12 +718,12 @@ static void net_find_local_address(
         error(EXIT_FAILURE, errno, "udp socket connect failed");
     }
 
-    if (getsockname(udp_socket, sourcesockaddr, &addr_length)) {
+    if (getsockname(udp_socket, (struct sockaddr *)&sourcesockaddr, &addr_length)) {
 
         error(EXIT_FAILURE, errno, "local address determination failed");
     }
 
-    inet_ntop(sourcesockaddr->sa_family, sockaddr_addr_offset(sourcesockaddr), localaddr, sizeof(localaddr));
+    inet_ntop(sourcesockaddr.ss_family, sockaddr_addr_offset(&sourcesockaddr), localaddr, sizeof(localaddr));
 
     close(udp_socket);
 }
@@ -764,19 +759,19 @@ void net_reopen(
 
     net_reset(ctl);
 
-    ctl->af = remotesockaddr->sa_family = sourcesockaddr->sa_family = res->ai_family;
-    remoteaddress = sockaddr_addr_offset(remotesockaddr);
-    memcpy(remoteaddress, sockaddr_addr_offset(res->ai_addr), sockaddr_addr_size(remotesockaddr));
-    inet_ntop(remotesockaddr->sa_family, remoteaddress, remoteaddr, sizeof(remoteaddr));
+    ctl->af = remotesockaddr.ss_family = sourcesockaddr.ss_family = res->ai_family;
+    remoteaddress = sockaddr_addr_offset(&remotesockaddr);
+    memcpy(remoteaddress, sockaddr_addr_offset(res->ai_addr), sockaddr_addr_size(&remotesockaddr));
+    inet_ntop(remotesockaddr.ss_family, remoteaddress, remoteaddr, sizeof(remoteaddr));
 
-    sourceaddress = sockaddr_addr_offset(sourcesockaddr);
+    sourceaddress = sockaddr_addr_offset(&sourcesockaddr);
 
     if (ctl->InterfaceAddress) {
         net_validate_interface_address(ctl->af, ctl->InterfaceAddress);
     } else if (ctl->InterfaceName) {
         net_find_interface_address_from_name(
-            &sourcesockaddr_struct, ctl->af, ctl->InterfaceName);
-        inet_ntop(sourcesockaddr->sa_family, sourceaddress, localaddr, sizeof(localaddr));
+            &sourcesockaddr, ctl->af, ctl->InterfaceName);
+        inet_ntop(sourcesockaddr.ss_family, sourceaddress, localaddr, sizeof(localaddr));
     } else {
         net_find_local_address();
     }
