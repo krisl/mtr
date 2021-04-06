@@ -613,12 +613,6 @@ static void net_validate_interface_address(
     if (inet_pton(address_family, interface_address, sourceaddress) != 1) {
         error(EXIT_FAILURE, errno, "invalid local address");
     }
-
-    if (inet_ntop
-        (address_family, sourceaddress, localaddr,
-         sizeof(localaddr)) == NULL) {
-        error(EXIT_FAILURE, errno, "invalid local address");
-    }
 }
 
 
@@ -723,8 +717,6 @@ static void net_find_local_address(
         error(EXIT_FAILURE, errno, "local address determination failed");
     }
 
-    inet_ntop(sourcesockaddr.ss_family, sockaddr_addr_offset(&sourcesockaddr), localaddr, sizeof(localaddr));
-
     close(udp_socket);
 }
 
@@ -769,11 +761,13 @@ void net_reopen(
     if (ctl->InterfaceAddress) {
         net_validate_interface_address(ctl->af, ctl->InterfaceAddress);
     } else if (ctl->InterfaceName) {
-        net_find_interface_address_from_name(
-            &sourcesockaddr, ctl->af, ctl->InterfaceName);
-        inet_ntop(sourcesockaddr.ss_family, sourceaddress, localaddr, sizeof(localaddr));
+        net_find_interface_address_from_name(&sourcesockaddr, ctl->af, ctl->InterfaceName);
     } else {
         net_find_local_address();
+    }
+
+    if (inet_ntop(ctl->af, sourceaddress, localaddr, sizeof(localaddr)) == NULL) {
+        error(EXIT_FAILURE, errno, "invalid local address");
     }
 
 }
