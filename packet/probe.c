@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <unistd.h>
 
 #include "command.h"
@@ -46,45 +47,33 @@ int decode_address_string(
     const char *address_string,
     struct sockaddr_storage *address)
 {
-    struct in_addr addr4;
-    struct in6_addr addr6;
-    struct sockaddr_in *sockaddr4;
-    struct sockaddr_in6 *sockaddr6;
-
     if (address == NULL) {
         errno = EINVAL;
         return -1;
     }
 
+    struct addrinfo hints, *res = NULL;
+    memset(&hints, 0, sizeof(hints));
+
     if (ip_version == 6) {
-        sockaddr6 = (struct sockaddr_in6 *) address;
-
-        if (inet_pton(AF_INET6, address_string, &addr6) != 1) {
-            errno = EINVAL;
-            return -1;
-        }
-
-        sockaddr6->sin6_family = AF_INET6;
-        sockaddr6->sin6_port = 0;
-        sockaddr6->sin6_flowinfo = 0;
-        sockaddr6->sin6_addr = addr6;
-        sockaddr6->sin6_scope_id = 0;
+        hints.ai_family = AF_INET6;
     } else if (ip_version == 4) {
-        sockaddr4 = (struct sockaddr_in *) address;
-
-        if (inet_pton(AF_INET, address_string, &addr4) != 1) {
-            errno = EINVAL;
-            return -1;
-        }
-
-        sockaddr4->sin_family = AF_INET;
-        sockaddr4->sin_port = 0;
-        sockaddr4->sin_addr = addr4;
+        hints.ai_family = AF_INET;
     } else {
         errno = EINVAL;
         return -1;
     }
 
+    hints.ai_flags = AI_NUMERICHOST;
+    int gai_error = getaddrinfo(address_string, NULL, &hints, &res);
+    if (gai_error != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(gai_error));
+        errno = EINVAL;
+        return -1;
+    }
+
+    memcpy(address, res->ai_addr, res->ai_addrlen);
+    freeaddrinfo(res);
     return 0;
 }
 
