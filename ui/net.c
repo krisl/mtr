@@ -87,7 +87,6 @@ static struct packet_command_pipe_t packet_command_pipe;
 static struct sockaddr_storage sourcesockaddr;
 static struct sockaddr_storage remotesockaddr;
 
-static ip_t *sourceaddress;
 static ip_t *remoteaddress;
 
 #ifdef ENABLE_IPV6
@@ -172,7 +171,7 @@ static void net_send_query(
     int time_to_live = index + 1;
 
     send_probe_command(ctl, &packet_command_pipe, remoteaddress,
-                       sourceaddress, packet_size, seq, time_to_live);
+                       sockaddr_addr_offset(&sourcesockaddr), packet_size, seq, time_to_live);
 }
 
 
@@ -610,7 +609,7 @@ static void net_validate_interface_address(
     int address_family,
     char *interface_address)
 {
-    if (inet_pton(address_family, interface_address, sourceaddress) != 1) {
+    if (inet_pton(address_family, interface_address, sockaddr_addr_offset(&sourcesockaddr)) != 1) {
         error(EXIT_FAILURE, errno, "invalid local address");
     }
 }
@@ -756,8 +755,6 @@ void net_reopen(
     memcpy(remoteaddress, sockaddr_addr_offset(res->ai_addr), sockaddr_addr_size(&remotesockaddr));
     inet_ntop(remotesockaddr.ss_family, remoteaddress, remoteaddr, sizeof(remoteaddr));
 
-    sourceaddress = sockaddr_addr_offset(&sourcesockaddr);
-
     if (ctl->InterfaceAddress) {
         net_validate_interface_address(ctl->af, ctl->InterfaceAddress);
     } else if (ctl->InterfaceName) {
@@ -766,7 +763,7 @@ void net_reopen(
         net_find_local_address();
     }
 
-    if (inet_ntop(ctl->af, sourceaddress, localaddr, sizeof(localaddr)) == NULL) {
+    if (inet_ntop(ctl->af, sockaddr_addr_offset(&sourcesockaddr), localaddr, sizeof(localaddr)) == NULL) {
         error(EXIT_FAILURE, errno, "invalid local address");
     }
 
