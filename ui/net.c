@@ -727,10 +727,8 @@ void net_reopen(
 {
     int at;
 
-    for (at = 0; at < MaxHost; at++) {
-        memset(&host[at], 0, sizeof(host[at]));
-    }
-
+    // reset previously pinged hosts
+    memset(host, 0, sizeof(host));
     net_reset(ctl);
 
     ctl->af = remotesockaddr.ss_family = sourcesockaddr.ss_family = res->ai_family;
