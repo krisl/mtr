@@ -21,5 +21,8 @@ jobs:
       run: make
     - name: make check
       run: sudo make check
+      allow_failure: true
+    - name: get logs
+      run: cat ./test-suite.log
     - name: make distcheck
       run: make distcheck
