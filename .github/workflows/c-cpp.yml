@@ -27,7 +27,6 @@ jobs:
       run: make distcheck
 
   show_logs:
-    when: on_failure
     steps:
     - name: get_logs
       run: cat ./test-suite.log
