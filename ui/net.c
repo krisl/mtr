@@ -101,14 +101,6 @@ static char remoteaddr[INET_ADDRSTRLEN];
 static int batch_at = 0;
 static int numhosts = 10;
 
-
-#define host_addr_cmp(index, other, af) \
-    addrcmp((void *) &(host[(index)].addr), (void *) (other), (af))
-
-#define host_addrs_cmp(index, path, other, af) \
-    addrcmp((void *) &(host[(index)].addrs[path]), (void *) (other), (af))
-
-
 /* return the number of microseconds to wait before sending the next
    ping */
 int calc_deltatime(
@@ -461,7 +453,7 @@ int net_max(
 
     max = 0;
     for (at = 0; at < ctl->maxTTL; at++) {
-        if (host_addr_cmp(at , sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0) {
+        if (addrcmp(&(host[at].addr), sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0) {
             return at + 1;
         } else if (host[at].err != 0) {
             /*
@@ -470,7 +462,7 @@ int net_max(
                 final hop.
             */
             return at + 1;
-        } else if (host_addr_cmp(at, &ctl->unspec_addr, ctl->af) != 0) {
+        } else if (addrcmp(&(host[at].addr), &ctl->unspec_addr, ctl->af) != 0) {
             max = at + 2;
         }
     }
@@ -567,7 +559,7 @@ int net_send_batch(
     net_send_query(ctl, batch_at, abs(packetsize));
 
     for (i = ctl->fstTTL - 1; i < batch_at; i++) {
-        if (host_addr_cmp(i, &ctl->unspec_addr, ctl->af) == 0)
+        if (addrcmp(&(host[i].addr), &ctl->unspec_addr, ctl->af) == 0)
             n_unknown++;
 
         /* The second condition in the next "if" statement was added in mtr-0.56, 
@@ -575,7 +567,7 @@ int net_send_batch(
            hosts. Removed in 0.65. 
            If the line proves necessary, it should at least NOT trigger that line
            when host[i].addr == 0 */
-        if (host_addr_cmp(i, sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0) {
+        if ((addrcmp(&(host[i].addr), sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0)) {
             restart = 1;
             numhosts = i + 1; /* Saves batch_at - index number of probes in the next round!*/
             break;
@@ -583,7 +575,7 @@ int net_send_batch(
     }
 
     if (                        /* success in reaching target */
-           (host_addr_cmp(batch_at, sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0) ||
+           (addrcmp(&(host[batch_at].addr), sockaddr_addr_offset(&remotesockaddr), ctl->af) == 0) ||
            /* fail in consecutive maxUnknown (firewall?) */
            (n_unknown > ctl->maxUnknown) ||
            /* or reach limit  */
