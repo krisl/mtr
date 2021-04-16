@@ -430,7 +430,8 @@ void xml_close(
         addr = net_addr(at);
         snprint_addr(ctl, name, sizeof(name), addr);
 
-        printf("    <HUB COUNT=\"%d\" HOST=\"%s\">\n", at + 1, name);
+        printf("    <HUB COUNT=\"%d\" HOST=\"%s\" IP=\"%s\">\n",
+                                 at + 1, name, strlongip(ctl->af, addr));
         for (i = 0; i < MAXFLD; i++) {
             const char *title;
 
