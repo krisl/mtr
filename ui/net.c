@@ -222,14 +222,7 @@ static void net_process_ping(
     int oldjavg;                /* usedByMin */
     int i;                      /* usedByMin */
     int found = 0;
-#ifdef ENABLE_IPV6
-    char addrcopy[sizeof(struct in6_addr)];
-#else
-    char addrcopy[sizeof(struct in_addr)];
-#endif
     struct nethost *nh = NULL;
-
-    memcpy(&addrcopy, addr, sockaddr_addr_size(sourcesockaddr));
 
     index = mark_sequence_complete(seq);
     if (index < 0) {
@@ -240,9 +233,9 @@ static void net_process_ping(
 
 
 
-    if (addrcmp(&nh->addr, &addrcopy, ctl->af) != 0) {
+    if (addrcmp(&nh->addr, addr, ctl->af) != 0) {
         for (i = 0; i < MAX_PATH; i++) {
-            if (addrcmp(&nh->addrs[i], &addrcopy, ctl->af) == 0) {
+            if (addrcmp(&nh->addrs[i], addr, ctl->af) == 0) {
                 found = 1; /* This host is already in the list */
                 break;
             }
@@ -252,7 +245,7 @@ static void net_process_ping(
         }
 
         if (found == 0 && i < MAX_PATH) {
-            memcpy(&nh->addrs[i], &addrcopy, sockaddr_addr_size(sourcesockaddr));
+            memcpy(&nh->addrs[i], addr, sockaddr_addr_size(sourcesockaddr));
 
             nh->mplss[i] = *mpls;
         }
@@ -260,7 +253,7 @@ static void net_process_ping(
         /* Always save the latest host in nh->addr. This
          * allows maxTTL to change whenever path changes.
          */
-        memcpy(&nh->addr, addrcopy, sockaddr_addr_size(sourcesockaddr));
+        memcpy(&nh->addr, addr, sockaddr_addr_size(sourcesockaddr));
         nh->mpls = *mpls;
         display_rawhost(ctl, index, &nh->addr, mpls);
     }
