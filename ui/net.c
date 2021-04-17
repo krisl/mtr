@@ -255,7 +255,6 @@ static void net_process_ping(
             memcpy(&nh->addrs[i], &addrcopy, sockaddr_addr_size(sourcesockaddr));
 
             nh->mplss[i] = *mpls;
-            display_rawhost(ctl, index, &nh->addrs[i], mpls);
         }
 
         /* Always save the latest host in nh->addr. This
