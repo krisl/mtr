@@ -533,9 +533,9 @@ void report_packet_error(
     const char *err_str =
         errno == EINVAL        ? "invalid-argument" :
         errno == ENETDOWN      ? "network-down" :
-        errno == ENETUNREACH   ? "no-route" :
-        errno == EHOSTDOWN     ? "no-route" :
-        errno == EHOSTUNREACH  ? "no-route" :
+        errno == ENETUNREACH   ? "network-unreachable" :
+        errno == EHOSTDOWN     ? "host-down" :
+        errno == EHOSTUNREACH  ? "host-unreachable" :
         errno == EPERM         ? "permission-denied" :
         errno == EADDRINUSE    ? "address-in-use" :
         errno == EADDRNOTAVAIL ? "address-not-available" :
