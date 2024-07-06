@@ -530,24 +530,20 @@ static
 void report_packet_error(
     int command_token)
 {
-    if (errno == EINVAL) {
-        printf("%d invalid-argument\n", command_token);
-    } else if (errno == ENETDOWN) {
-        printf("%d network-down\n", command_token);
-    } else if (errno == ENETUNREACH) {
-        printf("%d no-route\n", command_token);
-    } else if (errno == EHOSTDOWN) {
-        printf("%d no-route\n", command_token);
-    } else if (errno == EHOSTUNREACH) {
-        printf("%d no-route\n", command_token);
-    } else if (errno == EPERM) {
-        printf("%d permission-denied\n", command_token);
-    } else if (errno == EADDRINUSE) {
-        printf("%d address-in-use\n", command_token);
-    } else if (errno == EADDRNOTAVAIL) {
-        printf("%d address-not-available\n", command_token);
-    } else if (errno == ETIMEDOUT) {
-        printf("%d wait-tcp-respone-timeout\n", command_token);
+    const char *err_str =
+        errno == EINVAL        ? "invalid-argument" :
+        errno == ENETDOWN      ? "network-down" :
+        errno == ENETUNREACH   ? "no-route" :
+        errno == EHOSTDOWN     ? "no-route" :
+        errno == EHOSTUNREACH  ? "no-route" :
+        errno == EPERM         ? "permission-denied" :
+        errno == EADDRINUSE    ? "address-in-use" :
+        errno == EADDRNOTAVAIL ? "address-not-available" :
+        errno == ETIMEDOUT     ? "wait-tcp-respone-timeout" :
+        NULL;
+
+    if (err_str) {
+        printf("%d %s\n", command_token, err_str);
     } else {
         printf("%d unexpected-error errno %d\n", command_token, errno);
     }
